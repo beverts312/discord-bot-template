@@ -1,26 +1,27 @@
 import json
 import logging
-import os
 
-import boto3
-
-from discord_lite import bot_handler
+from discord_lite import BotUtils, bot_handler
 
 logging.getLogger().setLevel(logging.INFO)
 
 
 @bot_handler
 def discord_bot(command_body):
-    return {"content": "Hello Moto"}
+    data = command_body.get("data", {})
+    logging.info(data)
+    command_name = data.get("name")
+    if command_name == "hello":
+        return {"content": "Hello Moto"}
+    elif command_name == "helloasync":
+        BotUtils.send_command_to_queue(command_body)
+        return {"content": "Hello..."}
+    else:
+        logging.warn(f"unhandled command: {command_name}")
+        return {"content": "Unknown Command"}
 
 
 def long_response_handler(event, context):
     for record in event["Records"]:
         body = json.loads(record["body"])
-        logging.info(body)
-
-
-def send_long_response_msg(body):
-    boto3.client("sqs", region_name="us-east-1").send_message(
-        QueueUrl=os.getenv("LONG_RESPONSE_QUEUE"), MessageBody=body
-    )
+        BotUtils.edit_interaction(body, {"content": "Hello...async"})

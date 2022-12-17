@@ -1,10 +1,15 @@
 import json
 import logging
+import os
 from functools import wraps
 
+import boto3
+import requests
 from nacl.signing import VerifyKey
 
 from get_secrets import get_secrets
+
+DISCORD_API_BASE = "https://discord.com/api/v10"
 
 
 def respond(status_code, body):
@@ -39,6 +44,25 @@ class BotUtils:
             bytes.fromhex(get_secrets()["discord_public_key"])
         )
         verify_key.verify(message, bytes.fromhex(auth_sig))
+
+    @staticmethod
+    def send_command_to_queue(body):
+        boto3.client("sqs", region_name="us-east-1").send_message(
+            QueueUrl=os.getenv("LONG_RESPONSE_QUEUE"),
+            MessageBody=json.dumps(body),
+        )
+
+    @staticmethod
+    def edit_interaction(command_body, content):
+        discord_res = requests.patch(
+            f"{DISCORD_API_BASE}/webhooks/{command_body['application_id']}/{command_body['token']}/messages/@original",
+            json=content,
+        )
+        if discord_res.status_code != 200:
+            logging.error(discord_res.status_code)
+            logging.error(discord_res.text)
+        else:
+            logging.info(f"successfully handled: {command_body['id']}")
 
 
 def bot_handler(func):
