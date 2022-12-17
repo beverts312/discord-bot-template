@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Discord Bot
+
+Globals:
+  Function:
+    Timeout: 20
+    Layers:
+      - !Ref DependencyLayer
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+  Domain:
+    Type: String
+  HostedZoneId:
+    Type: String
+  BotSecretArn:
+    Type: String
+  BotName:
+    Type: String
+    Default: mybot
+
+Resources:
+  LongResponseQueue:
+    Type: AWS::SQS::Queue
+
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+
+  DependencyLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      ContentUri: ./
+      CompatibleRuntimes:
+        - python3.9
+    Metadata:
+      BuildMethod: makefile
+
+  EncryptionKey:
+    Type: AWS::KMS::Key
+    Properties: 
+      Description: !Sub "For ${BotName} Lambdas"
+      Enabled: true
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: key-default-1
+        Statement:
+        - Sid: Enable IAM User Permissions
+          Effect: Allow
+          Principal:
+            AWS: !Sub arn:aws:iam::${AWS::AccountId}:root
+          Action: kms:*
+          Resource: '*'
+
+  BotApiCertificate:
+    Type: AWS::CertificateManager::Certificate
+    Properties:
+      DomainName: !Ref Domain
+      ValidationMethod: DNS
+
+  BotApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref Stage
+      EndpointConfiguration: REGIONAL
+      AccessLogSetting:
+        DestinationArn: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:${BotName}-api-gw
+        Format: $context.requestId
+      Domain:
+        DomainName: !Ref Domain
+        CertificateArn: !Ref BotApiCertificate
+        Route53:
+          HostedZoneId: !Ref HostedZoneId
+  
+  DiscordBotFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: mybot/
+      Handler: app.discord_bot
+      Runtime: python3.9
+      ReservedConcurrentExecutions: 100
+      DeadLetterQueue: 
+        TargetArn: !GetAtt DeadLetterQueue.Arn
+        Type: SQS
+      KmsKeyArn: !GetAtt EncryptionKey.Arn
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref BotSecretArn
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt LongResponseQueue.QueueName
+        - KMSEncryptPolicy:
+            KeyId: !GetAtt EncryptionKey.Arn
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt EncryptionKey.Arn
+      Environment:
+        Variables:
+          BOT_SECRETS_ARN: !Ref BotSecretArn
+          LONG_RESPONSE_QUEUE: !Ref LongResponseQueue
+      Events:
+        DiscordBot:
+          Type: Api
+          Properties:
+            Path: /api/interactions
+            Method: post
+            RestApiId: !Ref BotApi
+
+  LongResponseHandlerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: mybot/
+      Handler: app.long_response_handler
+      Runtime: python3.9
+      KmsKeyArn: !GetAtt EncryptionKey.Arn
+      DeadLetterQueue:
+        TargetArn: !GetAtt DeadLetterQueue.Arn
+        Type: SQS
+      ReservedConcurrentExecutions: 100
+      Architectures:
+        - x86_64
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Ref BotSecretArn
+        - KMSEncryptPolicy:
+            KeyId: !GetAtt EncryptionKey.Arn
+        - KMSDecryptPolicy:
+            KeyId: !GetAtt EncryptionKey.Arn
+      Environment:
+        Variables:
+          BOT_SECRETS_ARN: !Ref BotSecretArn
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt LongResponseQueue.Arn
+            BatchSize: 1
+
+  BotKeepWarm:
+    Type: AWS::Events::Rule
+    Properties: 
+      Description: Keeps the bot lambda warm
+      Name: !Sub "keep-warm-${Stage}"
+      ScheduleExpression: rate(5 minutes)
+      Targets: 
+        - Id: KeepWarmDiscordBot
+          Arn: !GetAtt DiscordBotFunction.Arn
+
+Outputs:
+  InteractionEndpoint:
+    Description: The URL to use for Discord interactions
+    Value: !Sub "https://${Domain}/api/interactions"

@@ -1,0 +1,18 @@
+block-list-secret-scan: []
+branch: main
+compact: true
+directory: .
+download-external-modules: false
+evaluate-variables: true
+external-modules-download-path: .external_modules
+framework:
+- all
+secrets-scan-file-type: []
+summary-position: top
+skip-check:
+- CKV_AWS_27
+- CKV_AWS_73
+- CKV_AWS_117
+- CKV_AWS_120
+skip-path:
+- venv

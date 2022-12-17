@@ -8,6 +8,7 @@
 * AWS Account
 * Discord Developer Account 
 
+### Setup
 1. Go to the [Discord Developer Portal](https://discord.com/developers/applications) and create a new application.
 2. Go to the Bot tab and create a new bot.
 3. Clone this repo
@@ -17,3 +18,9 @@
     * Setup your initial `samconfig.toml`
     * Give you instructions for deploying your bot
     * Give you instructions for registering your endpoint with Discord
+
+## Development
+Common tasks are managed with [invoke](https://www.pyinvoke.org/), run `inv -l` to see what is available.
+
+## Adding your bot to a server
+To add the bot to a server you can visit the url: `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID_FOR_YOUR_APP}&permissions=0&scope=bot%20applications.commands

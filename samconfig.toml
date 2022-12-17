@@ -1,0 +1,12 @@
+
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "supa-bot"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-1uxzopm8jvt3h"
+s3_prefix = "test-bot"
+region = "us-east-1"
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "Stage=\"dev\" Domain=\"supa.b4llz.com\" HostedZoneId=\"Z005365310VJM5RG607QA\" BotSecretArn=\"arn:aws:secretsmanager:us-east-1:500664327072:secret:supa-bot-secrets-86lF0v\" BotName=\"supa-bot\""
+image_repositories = []
