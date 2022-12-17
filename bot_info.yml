@@ -1,0 +1,21 @@
+name: supa-bot
+app_id: '1053414209616101467'
+interaction_url: https://supa.b4llz.com/api/interactions
+secrets_arn: arn:aws:secretsmanager:us-east-1:500664327072:secret:supa-bot-secrets-86lF0v
+hosted_zone_id: Z005365310VJM5RG607QA
+commands:
+- name: hello
+  description: Hello World
+  type: 1
+  id: '1053506418390597632'
+  arguements: []
+- name: helloasync
+  description: Async hello world
+  type: 1
+  id: '1053580027767308298'
+  arguements: []
+- name: hello3
+  description: another hello world
+  type: 1
+  id: '1053738092110037022'
+  arguements: []

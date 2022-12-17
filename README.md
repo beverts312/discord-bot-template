@@ -13,7 +13,7 @@
 2. Go to the Bot tab and create a new bot.
 3. Clone this repo
 4. Setup local env: `virtualenv venv && source venv/bin/activate && pip install -r dev-requirements.txt`
-5. Run the setup script and follow the instructions it gives you `python scripts/initialize_settings.py`, this will:
+5. Run the setup script and follow the instructions it gives you `python scripts/setup_project.py`, this will:
     * Create an AWS secret for your bot
     * Setup your initial `samconfig.toml`
     * Give you instructions for deploying your bot
@@ -21,6 +21,3 @@
 
 ## Development
 Common tasks are managed with [invoke](https://www.pyinvoke.org/), run `inv -l` to see what is available.
-
-## Adding your bot to a server
-To add the bot to a server you can visit the url: `https://discord.com/api/oauth2/authorize?client_id=${CLIENT_ID_FOR_YOUR_APP}&permissions=0&scope=bot%20applications.commands
