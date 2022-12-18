@@ -4,7 +4,7 @@ from invoke import task
 def black(c, check):
     c.run("isort .")
     return c.run(
-        f"black tasks.py mybot/ scripts/ --line-length=79 {'--check' if check is True else ''} -v"
+        f"black tasks.py mybot/ scripts/ --line-length=79 {'--check' if check is True else ''}"
     )
 
 
