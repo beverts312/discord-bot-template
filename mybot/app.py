@@ -2,6 +2,7 @@ import json
 import logging
 
 from discord_sls import Interaction, bot_handler
+from discord_sls.lambda_bot import deferred_response_handler 
 
 
 @bot_handler
@@ -19,8 +20,6 @@ def discord_bot(command_body, send_command_to_queue):
         return {"content": "Unknown Command"}
 
 
-def long_response_handler(event, context):
-    for record in event["Records"]:
-        body = json.loads(record["body"])
-        interaction = Interaction(body)
-        interaction.edit_interaction({"content": "Hello...async"})
+@deferred_response_handler
+def long_response_handler(interaction: Interaction):
+    interaction.follow_up({"content": "async"})
