@@ -1,8 +1,6 @@
-import json
 import logging
 
-from discord_sls import Interaction, bot_handler
-from discord_sls.lambda_bot import deferred_response_handler 
+from discord_sls import Interaction, bot_handler, deferred_response_handler
 
 
 @bot_handler
